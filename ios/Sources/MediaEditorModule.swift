@@ -120,7 +120,7 @@ public final class MediaEditorModule: NativeModule, @unchecked Sendable {
             mixParameters.append(parameters)
         }
 
-        let outputSize = CGSize(width: try values.integer("width"), height: try values.integer("height"))
+        let outputSize = CGSize(width: Double(try values.integer("width")), height: Double(try values.integer("height")))
         let filteredComposition = AVVideoComposition(asset: composition) { [ciContext, edits] request in
             let edit = edits.first { CMTimeRangeContainsTime($0.range, time: request.compositionTime) }
             var image = request.sourceImage.clampedToExtent()
