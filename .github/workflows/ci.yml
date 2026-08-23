@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+          coverage: none
+      - name: Validate package metadata
+        run: composer validate --strict --no-check-lock
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress
+      - name: Test contracts
+        run: |
+          php -d auto_prepend_file=vendor/autoload.php tests/run.php
+          vendor/bin/phpstan analyse --no-progress
+      - name: Validate manifests
+        run: |
+          jq empty pam-native.plugin.json pam-native.idl.json
+          vendor/bin/pam-native-plugin validate pam-native.plugin.json
+          vendor/bin/pam-native-plugin conformance . --json > conformance.json
+          jq -e '.resultCode == 1' conformance.json

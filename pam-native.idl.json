@@ -1,0 +1,19 @@
+{
+    "$schema": "vendor/pushinbr/pam-native-plugin-kit/resources/pam-native.idl.schema.json",
+    "version": 1,
+    "namespace": "Pam.MediaEditor",
+    "enums": {
+        "MediaFilter": {"None": 1, "Monochrome": 2, "Sepia": 3, "Vivid": 4},
+        "VideoCodec": {"H264": 1, "Hevc": 2},
+        "ExportState": {"Queued": 1, "Exporting": 2, "Completed": 3, "Cancelled": 4, "Failed": 5}
+    },
+    "records": {
+        "MediaExportResult": {
+            "jobId": "int",
+            "state": "ExportState",
+            "progress": "int",
+            "path": "string",
+            "message": "string"
+        }
+    }
+}

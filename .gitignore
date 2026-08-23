@@ -1,0 +1,6 @@
+/vendor/
+/composer.lock
+/conformance.json
+/.phpstan.cache/
+/.idea/
+/.DS_Store

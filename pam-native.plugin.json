@@ -1,0 +1,36 @@
+{
+    "$schema": "vendor/pushinbr/pam-native/resources/pam-native.plugin.schema.json",
+    "version": 1,
+    "protocol": 1,
+    "pamNative": {
+        "minimum": "0.8.0",
+        "maximumExclusive": "0.9.0"
+    },
+    "php": {
+        "provider": "Pam\\Native\\MediaEditor\\MediaEditorPluginProvider"
+    },
+    "android": {
+        "namespace": "dev.pam.mediaeditor",
+        "minSdk": 26,
+        "dependencies": [
+            "androidx.media3:media3-common:1.9.3",
+            "androidx.media3:media3-effect:1.9.3",
+            "androidx.media3:media3-transformer:1.9.3"
+        ],
+        "sourceDirs": ["android/src/main/kotlin"]
+    },
+    "ios": {
+        "minimumVersion": "15.0",
+        "sourceDirs": ["ios/Sources"],
+        "frameworks": ["AVFoundation", "CoreImage", "CoreMedia", "CoreVideo"]
+    },
+    "idl": "pam-native.idl.json",
+    "modules": [
+        {
+            "name": "media-editor",
+            "class": "dev.pam.mediaeditor.MediaEditorModule",
+            "iosClass": "MediaEditorModule"
+        }
+    ],
+    "views": []
+}
