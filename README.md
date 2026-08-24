@@ -1,19 +1,54 @@
+<!-- pam:product-page:start -->
+<div align="center">
+
 # PAM Native Media Editor
 
-## Start here
+**Non-destructive editing with native export pipelines.**
 
-Install PAM, initialize a native application, then add this single horizontal capability:
+Describe crops, trims, transforms, filters, and export jobs in PHP while decoding and rendering stay native.
+
+[![Latest version](https://img.shields.io/packagist/v/pushinbr/pam-native-media-editor?style=flat-square&label=stable)](https://packagist.org/packages/pushinbr/pam-native-media-editor)
+[![CI](https://img.shields.io/github/actions/workflow/status/push-in/pam-native-media-editor/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/push-in/pam-native-media-editor/actions)
+![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?style=flat-square&logo=php&logoColor=white)
+![Android](https://img.shields.io/badge/Android-API%2026%2B-3DDC84?style=flat-square&logo=android&logoColor=white)
+![iOS](https://img.shields.io/badge/iOS-15%2B-000000?style=flat-square&logo=apple&logoColor=white)
+
+**[Documentation](https://push-in.github.io/pam-docs/native/overview/) · [Quick start](#quick-start) · [What you can build](#what-you-can-build) · [PAM ecosystem](https://push-in.github.io/pam-docs/ecosystem/) · [Issues](https://github.com/push-in/pam-native-media-editor/issues)**
+
+</div>
+
+---
+
+## Why PAM Native Media Editor
+
+Describe crops, trims, transforms, filters, and export jobs in PHP while decoding and rendering stay native. The public API is strictly typed for PHP 8.5; expensive or frame-sensitive work stays in Rust or the platform SDK instead of crossing the application boundary every frame.
+
+| | |
+| --- | --- |
+| **Best for** | A focused capability you can add to any PAM Native application |
+| **Native path** | Media3/MediaCodec · AVFoundation/Core Image |
+| **Application model** | Composer package + generated native integration |
+| **Design rule** | Independent module; no feed, vertical, or application template bundled |
+
+## What you can build
+
+- Creator and social editing flows
+- Commerce image preparation
+- Trim, crop, rotate, and export workflows
+
+## Quick start
+
+Already have a PAM Native project? Add only this capability:
 
 ```bash
-curl --proto '=https' --proto-redir '=https' --tlsv1.2 \
-    --connect-timeout 15 --max-time 60 --max-filesize 1048576 -fsSL \
-    https://github.com/push-in/pam/releases/latest/download/install.sh | sh
-
-pam init my-app --template native
-cd my-app
 pam composer require pushinbr/pam-native-media-editor
 pam doctor --fix
 ```
+
+New to PAM? Follow the **[five-minute PAM Native setup](https://push-in.github.io/pam-docs/native/overview/)** once, then return here. Your application stays a normal Composer project with a committed lockfile.
+<!-- pam:product-page:end -->
+
+## See it in action
 
 This package is a non-destructive native editing primitive. It does not install a feed, social,
 commerce, or streaming application template. Android uses Media3 Transformer; iOS uses
