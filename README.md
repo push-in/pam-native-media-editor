@@ -132,8 +132,13 @@ $jobId = $editor->export(
 - `width: null, height: null` keeps the source frame size; `videoBitRate: null` lets the encoder pick.
 - Progress is pushed by the native side through a single long-poll (`observe`), not timer polling.
   `status()` and `cancel()` take the identifier returned by `export()`.
-- iOS currently supports the original clip/crop/filter/soundtrack export; probe, image clips,
-  grading, overlays, ranges and progress are Android-only for now.
+- iOS (0.2+) implements the same timeline: image clips (stretched over a cached black clip and
+  replaced per frame), ranges, per-clip speed/volume/`removeAudio`, soundtrack, grading, timed
+  text/image/GIF overlays, grain and vignette are rendered with Core Image and written by
+  AVAssetReader/AVAssetWriter (H.264/HEVC, requested size and bitrate, `moov` first), with the
+  same pushed progress, typed failures and output probe. `preserveHdr` is ignored on iOS (SDR
+  output). The iOS implementation has not been validated on a device yet; see
+  `ios/Tests/MediaEditorTests.swift`.
 
 Platform support: Android API 26+, iOS 15+, PHP 8.5+, and PAM Native 1.0.35+.
 

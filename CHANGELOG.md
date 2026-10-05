@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 - 2026-10-05
+
+- iOS parity with 0.1.1: image clips, export ranges, per-clip `removeAudio`, timeline grading
+  (brightness, contrast, saturation, temperature, fade), grain and vignette, timed text/image
+  overlays (HTTPS and animated GIFs), `MediaEditor::probe()`, pushed `observe` progress, typed
+  `MediaEditorFailure` codes, output probe, nullable size/bitrate and `timeoutMillis`.
+- iOS exports through AVAssetReader/AVAssetWriter so `videoBitRate`, codec and size are honored.
+- Fix: iOS resolves paths in the PAM file sandbox (`Application Support/pam-files`).
+- Pure planning/grade/overlay math shared with the Android unit tests; XCTest mirror in
+  `ios/Tests`. Uncompiled on the release machine; needs device validation.
+
 ## 0.1.1 - 2026-10-05
 
 - Add image clips (`MediaClip::image($path, $durationMillis)`), per-clip `removeAudio`, and an

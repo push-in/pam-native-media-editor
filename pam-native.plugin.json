@@ -22,7 +22,7 @@
     "ios": {
         "minimumVersion": "15.0",
         "sourceDirs": ["ios/Sources"],
-        "frameworks": ["AVFoundation", "CoreImage", "CoreMedia", "CoreVideo"]
+        "frameworks": ["AVFoundation", "CoreImage", "CoreMedia", "CoreVideo", "ImageIO"]
     },
     "idl": "pam-native.idl.json",
     "modules": [
