@@ -5,7 +5,9 @@
     "enums": {
         "MediaFilter": {"None": 1, "Monochrome": 2, "Sepia": 3, "Vivid": 4},
         "VideoCodec": {"H264": 1, "Hevc": 2},
-        "ExportState": {"Queued": 1, "Exporting": 2, "Completed": 3, "Cancelled": 4, "Failed": 5}
+        "ExportState": {"Queued": 1, "Exporting": 2, "Completed": 3, "Cancelled": 4, "Failed": 5},
+        "OverlayKind": {"Text": 1, "Image": 2},
+        "MediaEditorFailure": {"Unknown": 1, "UnreadableSource": 2, "InvalidDuration": 3, "EmptyRange": 4, "ExportFailed": 5, "TimedOut": 6, "Cancelled": 7, "OutputMissing": 8}
     },
     "records": {
         "MediaExportResult": {
@@ -13,7 +15,22 @@
             "state": "ExportState",
             "progress": "int",
             "path": "string",
-            "message": "string"
+            "message": "string",
+            "failure": "MediaEditorFailure",
+            "bytes": "int",
+            "durationMillis": "int",
+            "width": "int",
+            "height": "int",
+            "hasAudio": "bool",
+            "rotationDegrees": "int"
+        },
+        "MediaTimelineInfo": {
+            "durationMillis": "int",
+            "clipDurations": "string",
+            "width": "int",
+            "height": "int",
+            "hasAudio": "bool",
+            "rotationDegrees": "int"
         }
     }
 }
