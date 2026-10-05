@@ -17,6 +17,8 @@ final readonly class MediaClip
         public int $rotationDegrees = 0,
         public ?MediaCrop $crop = null,
         public MediaFilter $filter = MediaFilter::None,
+        public bool $removeAudio = false,
+        public ?int $imageDurationMillis = null,
     ) {
         self::assertPath($source);
         if ($startMillis < 0 || ($endMillis !== null && $endMillis <= $startMillis)) {
@@ -28,9 +30,37 @@ final readonly class MediaClip
         if (!in_array($rotationDegrees, [0, 90, 180, 270], true)) {
             throw new InvalidArgumentException('Clip rotation must be 0, 90, 180, or 270 degrees.');
         }
+        if ($imageDurationMillis !== null && ($imageDurationMillis < 1 || $imageDurationMillis > 3_600_000 || $startMillis !== 0 || $endMillis !== null)) {
+            throw new InvalidArgumentException('Image clips need a duration between 1 ms and 1 hour and no source bounds.');
+        }
     }
 
-    /** @return array<string, string|int|float|array{x: float, y: float, width: float, height: float}|null> */
+    /**
+     * A still image shown for a fixed duration inside the timeline. Images carry no audio.
+     */
+    public static function image(
+        string $source,
+        int $durationMillis,
+        int $rotationDegrees = 0,
+        ?MediaCrop $crop = null,
+        MediaFilter $filter = MediaFilter::None,
+    ): self {
+        return new self(
+            source: $source,
+            rotationDegrees: $rotationDegrees,
+            crop: $crop,
+            filter: $filter,
+            removeAudio: true,
+            imageDurationMillis: $durationMillis,
+        );
+    }
+
+    public function isImage(): bool
+    {
+        return $this->imageDurationMillis !== null;
+    }
+
+    /** @return array<string, string|int|float|bool|array{x: float, y: float, width: float, height: float}|null> */
     public function toArray(): array
     {
         return [
@@ -42,6 +72,8 @@ final readonly class MediaClip
             'rotationDegrees' => $this->rotationDegrees,
             'crop' => $this->crop?->toArray(),
             'filter' => $this->filter->value,
+            'removeAudio' => $this->removeAudio,
+            'imageDurationMillis' => $this->imageDurationMillis,
         ];
     }
 
