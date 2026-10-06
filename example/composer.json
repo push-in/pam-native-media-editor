@@ -1,0 +1,20 @@
+{
+    "name": "pam-examples/media-editor-demo",
+    "description": "Minimal PAM Native app for pushinbr/pam-native-media-editor.",
+    "type": "project",
+    "license": "Apache-2.0",
+    "require": {
+        "php": "^8.5",
+        "pushinbr/pam-native": "^1.14",
+        "pushinbr/pam-native-media-editor": "^0.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "config": {
+        "platform-check": true,
+        "sort-packages": true
+    }
+}
