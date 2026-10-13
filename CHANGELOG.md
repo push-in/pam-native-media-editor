@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 - 2026-10-13
+
+- Add opt-in wrapped text overlays (`maxWidth`, `referenceWidth`, `maxLines`) on Android/iOS; preserve legacy single-line payloads.
+- Scale fonts with output width, center bounded multiline blocks and truncate long content. Cache Android layouts per output width; cap iOS raster allocations at 4M pixels.
+- Add PHP contracts and Android bitmap regressions for narrow outputs, multiline, truncation, scale and rotation; include iOS XCTest source (Mac execution pending).
+
 ## 0.2.0 - 2026-10-05
 
 - iOS parity with 0.1.1: image clips, export ranges, per-clip `removeAudio`, timeline grading

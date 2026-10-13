@@ -11,6 +11,10 @@ import android.graphics.RadialGradient
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
+import android.text.Layout
+import android.text.StaticLayout
+import android.text.TextPaint
+import android.text.TextUtils
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.effect.CanvasOverlay
 import java.io.ByteArrayOutputStream
@@ -46,12 +50,18 @@ internal class TimelineOverlay private constructor(
         val fontSize: Float = 48f,
         val backgroundColor: Int? = null,
         val bold: Boolean = true,
+        val referenceWidth: Float = 0f,
+        val maxLines: Int = 8,
         val bitmap: Bitmap? = null,
         val movie: Movie? = null,
         val width: Float = 0.34f,
         val maxWidth: Float = 0.72f,
         val minWidthPixels: Float = 96f,
-    )
+    ) {
+        var textLayout: StaticLayout? = null
+        var textLayoutWidth: Int = 0
+        var textLayoutHeight: Int = 0
+    }
 
     val hasContent: Boolean get() = layers.isNotEmpty() || grain > 0.001f || vignette > 0.001f
 
@@ -63,7 +73,7 @@ internal class TimelineOverlay private constructor(
             canvas.save()
             val centerX = layer.x * canvas.width
             val centerY = layer.y * canvas.height
-            canvas.rotate(layer.rotationDegrees, centerX, centerY)
+            if (layer.kind != KIND_TEXT || layer.referenceWidth <= 0f) canvas.rotate(layer.rotationDegrees, centerX, centerY)
             if (layer.kind == KIND_IMAGE) drawImage(canvas, layer, timeMs, centerX, centerY) else drawText(canvas, layer, centerX, centerY)
             canvas.restore()
         }
@@ -72,6 +82,10 @@ internal class TimelineOverlay private constructor(
     }
 
     private fun drawText(canvas: Canvas, layer: Layer, centerX: Float, centerY: Float) {
+        if (layer.referenceWidth > 0f) {
+            drawWrappedText(canvas, layer, centerX, centerY)
+            return
+        }
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = layer.color
             textAlign = Paint.Align.CENTER
@@ -90,6 +104,39 @@ internal class TimelineOverlay private constructor(
             )
         }
         canvas.drawText(layer.text, centerX, baseline, paint)
+    }
+
+    private fun drawWrappedText(canvas: Canvas, layer: Layer, centerX: Float, centerY: Float) {
+        val layout = layer.textLayout?.takeIf { layer.textLayoutWidth == canvas.width && layer.textLayoutHeight == canvas.height } ?: run {
+            val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = layer.color
+                // Bound glyph rasterization independently of caller-controlled reference dimensions.
+                val fontLimit = minOf(512f, canvas.width.toFloat(), canvas.height / 1.5f).coerceAtLeast(1f)
+                textSize = (layer.fontSize * layer.scale * canvas.width / layer.referenceWidth).coerceIn(1f, fontLimit)
+                typeface = if (layer.bold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+            }
+            val boundedLines = minOf(layer.maxLines,
+                max(1, (minOf(canvas.height, 8192) / (paint.fontSpacing * 1.18f)).toInt()))
+            StaticLayout.Builder.obtain(layer.text, 0, layer.text.length, paint,
+                max(1, (canvas.width * layer.maxWidth).toInt()))
+                .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                .setIncludePad(false)
+                .setLineSpacing(0f, 1.18f)
+                .setMaxLines(boundedLines)
+                .setEllipsize(TextUtils.TruncateAt.END)
+                .build().also { layer.textLayout = it; layer.textLayoutWidth = canvas.width; layer.textLayoutHeight = canvas.height }
+        }
+        val x = centerX.coerceIn(layout.width / 2f, max(layout.width / 2f, canvas.width - layout.width / 2f))
+        val y = centerY.coerceIn(layout.height / 2f, max(layout.height / 2f, canvas.height - layout.height / 2f))
+        canvas.save()
+        canvas.rotate(layer.rotationDegrees, x, y)
+        canvas.translate(x - layout.width / 2f, y - layout.height / 2f)
+        layer.backgroundColor?.let { color ->
+            canvas.drawRoundRect(0f, 0f, layout.width.toFloat(), layout.height.toFloat(), 14f, 14f,
+                Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color })
+        }
+        layout.draw(canvas)
+        canvas.restore()
     }
 
     private fun drawImage(canvas: Canvas, layer: Layer, timeMs: Long, centerX: Float, centerY: Float) {
@@ -141,7 +188,12 @@ internal class TimelineOverlay private constructor(
     }
 
     override fun close() {
-        layers.forEach { layer -> layer.bitmap?.takeUnless(Bitmap::isRecycled)?.recycle() }
+        layers.forEach { layer ->
+            layer.bitmap?.takeUnless(Bitmap::isRecycled)?.recycle()
+            layer.textLayout = null
+            layer.textLayoutWidth = 0
+            layer.textLayoutHeight = 0
+        }
     }
 
     companion object {
@@ -189,6 +241,9 @@ internal class TimelineOverlay private constructor(
                 fontSize = item.optDouble("fontSize", 48.0).toFloat().coerceIn(4f, 512f),
                 backgroundColor = if (item.isNull("backgroundColor")) null else OverlayMath.parseColor(item.optString("backgroundColor"), Color.WHITE),
                 bold = item.optBoolean("bold", true),
+                referenceWidth = if (item.has("maxWidth")) item.optDouble("referenceWidth", 0.0).toFloat().takeIf { it.isFinite() && it in 1f..8192f } ?: 0f else 0f,
+                maxWidth = item.optDouble("maxWidth", 0.78).toFloat().takeIf { it.isFinite() && it > 0f && it <= 1f } ?: 0.78f,
+                maxLines = item.optInt("maxLines", 8).coerceIn(1, 32),
             )
         }
 

@@ -329,3 +329,17 @@ Apache-2.0. See [LICENSE](LICENSE).
 - [PAM introduction](https://push-in.github.io/pam-docs/introduction/)
 - [PAM Native overview](https://push-in.github.io/pam-docs/native/overview/)
 - [Report an issue](https://github.com/push-in/pam-native-media-editor/issues)
+
+### Wrapped text overlays
+
+Pass `maxWidth: 0.78, referenceWidth: 720, maxLines: 8` to `TextOverlay` to
+wrap text within a fraction of the output width. Font size is measured against
+`referenceWidth` and scales with the output. Long content is limited to
+`maxLines` (1–32), with trailing ellipsis. The block stays inside the unrotated
+canvas bounds, then rotates around its clamped center. Android caps glyph size at 512px and at canvas dimensions, limits lines to available
+height, and caches one layout per layer/output dimensions. iOS rasterizes the
+bounded block once before exporting and refuses allocations exceeding 4M pixels.
+Omitting the options preserves the existing single-line, absolute-pixel contract.
+
+Android bitmap regressions: `TimelineTextOverlayTest`; iOS mirror:
+`TextOverlayTests.swift` (requires Mac/Xcode execution).

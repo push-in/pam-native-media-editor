@@ -38,6 +38,14 @@ expect(array_column(VideoCodec::cases(), 'value') === range(1, 2), 'VideoCodec v
 expect(array_column(OverlayKind::cases(), 'value') === range(1, 2), 'OverlayKind values must be sequential.');
 expect(array_column(MediaEditorFailure::cases(), 'value') === range(1, 8), 'MediaEditorFailure values must be sequential.');
 
+$wrapped = new TextOverlay('long text', maxWidth: 0.78, referenceWidth: 720, maxLines: 8);
+expect($wrapped->toArray()['maxWidth'] === 0.78 && $wrapped->toArray()['referenceWidth'] === 720.0, 'Wrapped layout serializes opt-in dimensions.');
+expect(!array_key_exists('maxWidth', (new TextOverlay('legacy'))->toArray()), 'Legacy wire payload remains unchanged.');
+foreach ([[0.0, 720, 8], [0.78, null, 8], [null, 720, 8], [0.78, INF, 8], [0.78, 720, 33]] as [$width, $reference, $lines]) {
+    try { new TextOverlay('invalid', maxWidth: $width, referenceWidth: $reference, maxLines: $lines); throw new RuntimeException('Invalid wrapped text accepted.'); }
+    catch (InvalidArgumentException) {}
+}
+
 $idl = json_decode((string) file_get_contents(dirname(__DIR__) . '/pam-native.idl.json'), true, 16, JSON_THROW_ON_ERROR);
 foreach ([MediaFilter::class, VideoCodec::class, ExportState::class, OverlayKind::class, MediaEditorFailure::class] as $enum) {
     $short = substr($enum, strrpos($enum, '\\') + 1);

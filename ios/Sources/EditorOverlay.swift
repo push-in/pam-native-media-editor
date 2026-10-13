@@ -27,6 +27,7 @@ final class EditorOverlay: @unchecked Sendable {
         let width: Double
         let maxWidth: Double
         let minWidthPixels: Double
+        var referenceWidth: Double = 0
     }
 
     private let layers: [Layer]
@@ -51,7 +52,10 @@ final class EditorOverlay: @unchecked Sendable {
     }
 
     private static func parse(_ item: [String: Any], resolve: (String) throws -> URL) -> Layer? {
-        func number(_ key: String, _ fallback: Double) -> Double { (item[key] as? NSNumber)?.doubleValue ?? fallback }
+        func number(_ key: String, _ fallback: Double) -> Double {
+            guard let value = (item[key] as? NSNumber)?.doubleValue, value.isFinite else { return fallback }
+            return value
+        }
         let kind = (item["kind"] as? NSNumber)?.intValue ?? kindText
         let start = (item["startMillis"] as? NSNumber)?.int64Value ?? 0
         let end = (item["endMillis"] as? NSNumber)?.int64Value ?? .max
@@ -77,11 +81,14 @@ final class EditorOverlay: @unchecked Sendable {
                 fontSize: min(max(number("fontSize", 48), 4), 512) * scale,
                 background: OverlayMath.parseColor(item["backgroundColor"] as? String),
                 bold: (item["bold"] as? Bool) ?? true,
-                scale: scale
+                scale: scale,
+                maxWidth: item["maxWidth"] == nil ? nil : min(max(number("maxWidth", 0.78), 0.01), 1) * min(max(number("referenceWidth", 720), 1), 8192),
+                maxLines: min(max(Int(number("maxLines", 8)), 1), 32)
               ) else { return nil }
         return Layer(
             kind: kindText, x: x, y: y, scale: scale, rotationDegrees: rotation, startMs: start, endMs: end,
-            frames: [rendered], frameEnds: [], width: 0, maxWidth: 0, minWidthPixels: 0
+            frames: [rendered], frameEnds: [], width: 0, maxWidth: 0, minWidthPixels: 0,
+            referenceWidth: item["maxWidth"] == nil ? 0 : min(max(number("referenceWidth", 720), 1), 8192)
         )
     }
 
@@ -98,6 +105,15 @@ final class EditorOverlay: @unchecked Sendable {
                 let factor = target / Double(max(picture.extent.width, 1))
                 picture = picture.transformed(by: CGAffineTransform(scaleX: factor, y: factor))
             }
+            if layer.kind == Self.kindText && layer.referenceWidth > 0 {
+                let factor = size.width / layer.referenceWidth
+                picture = picture.transformed(by: CGAffineTransform(scaleX: factor, y: factor))
+            }
+            let halfWidth = picture.extent.width / 2
+            let halfHeight = picture.extent.height / 2
+            let wrapped = layer.kind == Self.kindText && layer.referenceWidth > 0
+            let centerX = wrapped ? min(max(layer.x * size.width, halfWidth), max(halfWidth, size.width - halfWidth)) : layer.x * size.width
+            let centerY = wrapped ? min(max((1 - layer.y) * size.height, halfHeight), max(halfHeight, size.height - halfHeight)) : (1 - layer.y) * size.height
             // Centre on the origin, rotate clockwise (CoreImage is y-up), then place.
             picture = picture.transformed(by: CGAffineTransform(
                 translationX: -picture.extent.midX,
@@ -105,8 +121,8 @@ final class EditorOverlay: @unchecked Sendable {
             ))
             picture = picture.transformed(by: CGAffineTransform(rotationAngle: -layer.rotationDegrees * .pi / 180))
             picture = picture.transformed(by: CGAffineTransform(
-                translationX: layer.x * size.width,
-                y: (1 - layer.y) * size.height
+                translationX: centerX,
+                y: centerY
             ))
             image = picture.composited(over: image)
         }
@@ -197,9 +213,40 @@ final class EditorOverlay: @unchecked Sendable {
         fontSize: Double,
         background: (Double, Double, Double, Double)?,
         bold: Bool,
-        scale: Double
+        scale: Double,
+        maxWidth: Double? = nil,
+        maxLines: Int = 8
     ) -> CIImage? {
         let font = bold ? UIFont.boldSystemFont(ofSize: fontSize) : UIFont.systemFont(ofSize: fontSize)
+        if let maxWidth {
+            let paragraph = NSMutableParagraphStyle()
+            paragraph.alignment = .center
+            paragraph.lineHeightMultiple = 1.18
+            paragraph.lineBreakMode = .byWordWrapping
+            let string = NSAttributedString(string: text, attributes: [
+                .font: font, .paragraphStyle: paragraph,
+                .foregroundColor: UIColor(red: color.1, green: color.2, blue: color.3, alpha: color.0),
+            ])
+            let rect = string.boundingRect(with: CGSize(width: maxWidth, height: .greatestFiniteMagnitude),
+                options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil)
+            let width = ceil(maxWidth)
+            let height = max(1, min(ceil(rect.height), ceil(font.lineHeight * 1.18 * Double(maxLines))))
+            // A malformed direct native payload must not allocate an unbounded bitmap.
+            guard width <= 8192, height <= 8192, width * height <= 4_194_304 else { return nil }
+            let size = CGSize(width: width, height: height)
+            let format = UIGraphicsImageRendererFormat()
+            format.scale = 1
+            format.opaque = false
+            let rendered = UIGraphicsImageRenderer(size: size, format: format).image { _ in
+                if let background {
+                    UIColor(red: background.1, green: background.2, blue: background.3, alpha: background.0).setFill()
+                    UIBezierPath(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 14).fill()
+                }
+                string.draw(with: CGRect(origin: .zero, size: size),
+                    options: [.usesLineFragmentOrigin, .usesFontLeading, .truncatesLastVisibleLine], context: nil)
+            }
+            return rendered.cgImage.map { CIImage(cgImage: $0) }
+        }
         let attributes: [NSAttributedString.Key: Any] = [
             .font: font,
             .foregroundColor: UIColor(red: color.1, green: color.2, blue: color.3, alpha: color.0),
